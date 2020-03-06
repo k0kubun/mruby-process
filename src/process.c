@@ -11,8 +11,10 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#ifndef _WIN32
 #include <sys/wait.h>
 #include <sys/select.h>
+#endif
 #include <signal.h>
 #include <unistd.h>
 
@@ -22,6 +24,7 @@
 #include <string.h>
 #include <time.h>
 
+#ifndef _WIN32
 static mrb_value mrb_f_exit_common(mrb_state *mrb, int bang);
 static mrb_value mrb_procstat_new(mrb_state *mrb, mrb_int pid, mrb_int status);
 
@@ -270,6 +273,7 @@ mrb_f_exit_common(mrb_state *mrb, int bang)
     exit(istatus);
   }
 }
+#endif
 
 mrb_value
 mrb_f_pid(mrb_state *mrb, mrb_value klass)
@@ -277,6 +281,7 @@ mrb_f_pid(mrb_state *mrb, mrb_value klass)
   return mrb_fixnum_value((mrb_int)getpid());
 }
 
+#ifndef _WIN32
 mrb_value
 mrb_f_ppid(mrb_state *mrb, mrb_value klass)
 {
@@ -355,23 +360,27 @@ mrb_procstat_termsig(mrb_state *mrb, mrb_value self)
     return mrb_nil_value();
   }
 }
+#endif
 
 void
 mrb_mruby_process_gem_init(mrb_state *mrb)
 {
   struct RClass *p, *s;
 
+#ifndef _WIN32
   mrb_define_method(mrb, mrb->kernel_module, "exit",   mrb_f_exit,   MRB_ARGS_OPT(1));
   mrb_define_method(mrb, mrb->kernel_module, "exit!", mrb_f_exit_bang, MRB_ARGS_OPT(1));
   mrb_define_method(mrb, mrb->kernel_module, "fork",   mrb_f_fork,   MRB_ARGS_NONE());
   mrb_define_method(mrb, mrb->kernel_module, "sleep",  mrb_f_sleep,  MRB_ARGS_ANY());
   mrb_define_method(mrb, mrb->kernel_module, "system", mrb_f_system, MRB_ARGS_ANY());
+#endif
 
   p = mrb_define_module(mrb, "Process");
+  mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
+#ifndef _WIN32
   mrb_define_class_method(mrb, p, "kill",    mrb_f_kill,    MRB_ARGS_ANY());
   mrb_define_class_method(mrb, p, "fork",    mrb_f_fork,    MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "waitpid", mrb_f_waitpid, MRB_ARGS_ANY());
-  mrb_define_class_method(mrb, p, "pid",     mrb_f_pid,     MRB_ARGS_NONE());
   mrb_define_class_method(mrb, p, "ppid",    mrb_f_ppid,    MRB_ARGS_NONE());
 
   s = mrb_define_class_under(mrb, p, "Status", mrb->object_class);
@@ -388,6 +397,7 @@ mrb_mruby_process_gem_init(mrb_state *mrb)
 
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$$"), mrb_fixnum_value((mrb_int)getpid()));
   mrb_gv_set(mrb, mrb_intern_lit(mrb, "$?"), mrb_nil_value());
+#endif
 }
 
 void
